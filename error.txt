@@ -1,0 +1,77 @@
+PS C:\Users\moks05\Downloads\project\messagetrace powershell> .\messagetrace3.ps1 -MessageID "MN0PR01MB76125C8BEB900D5FA8AA23EAF8D99@MN0PR01MB7612.prod.exchangelabs.com" -resultfile results.csv -pages 1
+######################## FINDING THE SENDER OF THE EMAIL##########
+Scanning Message Trace MN0PR01MB76125C8BEB900D5FA8AA23EAF8D99@MN0PR01MB7612.prod.exchangelabs.com   10 days back
+Scanning Message Trace MN0PR01MB76125C8BEB900D5FA8AA23EAF8D99@MN0PR01MB7612.prod.exchangelabs.com   9 days back
+Scanning Message Trace MN0PR01MB76125C8BEB900D5FA8AA23EAF8D99@MN0PR01MB7612.prod.exchangelabs.com   8 days back
+Scanning Message Trace MN0PR01MB76125C8BEB900D5FA8AA23EAF8D99@MN0PR01MB7612.prod.exchangelabs.com   7 days back
+Scanning Message Trace MN0PR01MB76125C8BEB900D5FA8AA23EAF8D99@MN0PR01MB7612.prod.exchangelabs.com   6 days back
+Scanning Message Trace MN0PR01MB76125C8BEB900D5FA8AA23EAF8D99@MN0PR01MB7612.prod.exchangelabs.com   5 days back
+Scanning Message Trace MN0PR01MB76125C8BEB900D5FA8AA23EAF8D99@MN0PR01MB7612.prod.exchangelabs.com   4 days back
+Scanning Message Trace MN0PR01MB76125C8BEB900D5FA8AA23EAF8D99@MN0PR01MB7612.prod.exchangelabs.com   3 days back
+Scanning Message Trace MN0PR01MB76125C8BEB900D5FA8AA23EAF8D99@MN0PR01MB7612.prod.exchangelabs.com   2 days back
+Scanning Message Trace MN0PR01MB76125C8BEB900D5FA8AA23EAF8D99@MN0PR01MB7612.prod.exchangelabs.com   1 days back
+Get-Date : Cannot bind parameter 'Date' to the target. Exception setting "Date": "Cannot convert null to type
+"System.DateTime"."
+At C:\Users\moks05\Downloads\project\messagetrace powershell\messagetrace3.ps1:50 char:38
++ $date= $mail[0].received |%{get-date $_}
++                                      ~~
+    + CategoryInfo          : WriteError: (:) [Get-Date], ParameterBindingException
+    + FullyQualifiedErrorId : ParameterBindingFailed,Microsoft.PowerShell.Commands.GetDateCommand
+
+You cannot call a method on a null-valued expression.
+At C:\Users\moks05\Downloads\project\messagetrace powershell\messagetrace3.ps1:51 char:1
++ $enddate=$date.adddays(3)
++ ~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+
+The sender of the email is  and It was received by 0 number of People
+#################### Email Sender Found################
+Cannot index into a null array.
+At C:\Users\moks05\Downloads\project\messagetrace powershell\messagetrace3.ps1:92 char:1
++ $date= ($test |sort-object Received)[0].Received
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : NullArray
+
+You cannot call a method on a null-valued expression.
+At C:\Users\moks05\Downloads\project\messagetrace powershell\messagetrace3.ps1:93 char:1
++ $enddate=$date.adddays(3)
++ ~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+
+Cannot index into a null array.
+At C:\Users\moks05\Downloads\project\messagetrace powershell\messagetrace3.ps1:92 char:1
++ $date= ($test |sort-object Received)[0].Received
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : NullArray
+
+You cannot call a method on a null-valued expression.
+At C:\Users\moks05\Downloads\project\messagetrace powershell\messagetrace3.ps1:93 char:1
++ $enddate=$date.adddays(3)
++ ~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+
+Cannot index into a null array.
+At C:\Users\moks05\Downloads\project\messagetrace powershell\messagetrace3.ps1:92 char:1
++ $date= ($test |sort-object Received)[0].Received
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : NullArray
+
+You cannot call a method on a null-valued expression.
+At C:\Users\moks05\Downloads\project\messagetrace powershell\messagetrace3.ps1:93 char:1
++ $enddate=$date.adddays(3)
++ ~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+
+Cannot index into a null array.
+At C:\Users\moks05\Downloads\project\messagetrace powershell\messagetrace3.ps1:92 char:1
++ $date= ($test |sort-object Received)[0].Received
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : NullArray
