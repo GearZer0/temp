@@ -24,7 +24,7 @@ while($z -gt 0)
    Write-host "Scanning Message Trace $($MessageID)   $z days back"
     while($i  -lt $pages)
 {     
-      $mail+=Get-MessageTrace -Page $i -PageSize 5000 -MessageTraceId $MessageID -startdate $date -enddate $enddate
+      $mail+=Get-MessageTrace -Page $i -PageSize 5000 -MessageID $MessageID -startdate $date -enddate $enddate
     $i++
       
 }
