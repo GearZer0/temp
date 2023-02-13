@@ -16,7 +16,7 @@ function MessageID
   while($i  -lt $page)
   {
   Write-Host "Checking Email of Page # $($i)"
-  $Mail+=Get-MessageTrace -MessageTraceID $MessageID -Page $i -PageSize 5000 -startdate $startdate -enddate $enddate
+  $Mail+=Get-MessageTrace -MessageID $MessageID -Page $i -PageSize 5000 -startdate $startdate -enddate $enddate
   $i++
   }
 }
@@ -63,8 +63,8 @@ param([string]$SenderEmailaddres)
 $global:Mail=@()
 $global:Page=$Pages
 $global:date=$Daysold
-$global:$startdate=$startdate 
-$global:$enddate=$enddate
+$global:startdate=$startdate 
+$global:enddate=$enddate
 
 if(!($startdate -match '[0-9'] -or $enddate -match '[0-9']  ))
 {
