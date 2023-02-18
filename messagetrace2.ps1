@@ -7,98 +7,140 @@ param(
 [Parameter(Mandatory=$True)][string]$Resultfile,
 [Parameter(Mandatory=$False)][string]$startdate,
 [Parameter(Mandatory=$False)][string]$enddate,
-[Parameter(Mandatory=$True)][string]$SubJectQuery
+[Parameter(Mandatory=$False)][string]$SubJectQuery
 )
 
 function MessageID
 { 
-  param([string]$MessageID)
+ $mail=$null;$mail=@()
+ $i=1
+ if(!($startdate -match '[0-9]') -or !($enddate -match '[0-9]'))
+   {
+    $startdate=(get-date).adddays(-10)
+    $enddate=get-date
+   }
   while($i  -lt $page)
   {
   Write-Host "Checking Email of Page # $($i)"
-  $Mail+=Get-MessageTrace -MessageID $MessageID -Page $i -PageSize 5000 -startdate $startdate -enddate $enddate
+  $Mail+=Get-MessageTrace -MessageTraceID $MessageID -Page $i -PageSize 5000 -startdate $startdate -enddate $enddate
   $i++
   }
+  $mail=$mail |?{$_.senderaddress -match "@"}
+  return $mail
 }
 
 function Sender
 {
- param([string]$SenderEmailaddres)
+$mail=@()
+$i=1
+Write-Host "Sender"
+if(!($startdate -match '[0-9]') -or !($enddate -match '[0-9]'))
+   {
+    $startdate=(get-date).adddays(-10)
+    enddate=get-date
+   }
 while($i  -lt $page)
   {
   Write-Host "Checking Email of Page # $($i)"
   $Mail+=Get-MessageTrace -SenderAddress $SenderEmailaddres -Page $i -PageSize 5000 -startdate $startdate -enddate $enddate
   $i++
   }
+return $mail
 }
 
 function Receiver
 {
-param([string]$RecipientEmailaddres)
+$mail=@()
+$i=1
+Write-Host "Receiver Email $($RecipientEmailaddres)"
+if(!($startdate -match '[0-9]') -or !($enddate -match '[0-9]'))
+   {
+    $startdate=(get-date).adddays(-10)
+    enddate=get-date
+   }
 while($i  -lt $page)
   {
   Write-Host "Checking Email of Page # $($i)"
   $Mail+=Get-MessageTrace -RecipientAddress $RecipientEmailaddres -Page $i -PageSize 5000 -startdate $startdate -enddate $enddate
+  $mail.count
   $i++
   }
+return $mail
 }
 
 function SendReceive
 {
-param([string]$RecipientEmailaddres)
-param([string]$SenderEmailaddres)
+$mail=@()
+$i=1
+Write-Host "SendReceive"
+if(!($startdate -match '[0-9]') -or !($enddate -match '[0-9]'))
+   {
+    $startdate=(get-date).adddays(-10)
+    enddate=get-date
+   }
  while($i  -lt $page)
   {
   Write-Host "Checking Email of Page # $($i)"
+  
   $Mail+=Get-MessageTrace -SenderAddress $SenderEmailaddres -RecipientAddress $RecipientEmailaddres -Page $i -PageSize 5000 -startdate $startdate -enddate $enddate
   $i++
   }
-
+return $mail
 }
 
 
 #===================================
 
+###########Script Starts here#################
 
-$global:Mail=@()
+#$global:Mail=@()
 $global:Page=$Pages
 $global:date=$Daysold
 $global:startdate=$startdate 
 $global:enddate=$enddate
+$global:RecipientEmailaddres=$RecipientEmailaddres
+$global:MessageID=$MessageID
+$global:SenderEmailaddres=$SenderEmailaddres
 
-if(!($startdate -match '[0-9'] -or $enddate -match '[0-9']  ))
-{
-$startdate=get-date(-10)
-$enddate=get-date
 
-}
+if($MessageID -match '[a-z]')
+{ 
+ Write-Host "MessageID"
+  $mail=MessageID
 
-if($MessageID -ne $null)
-{
-  MessageID -Id $MessageID
 }
 
 else
 {
-  if($RecipientEmailaddres -eq $null -and $SenderEmailaddres -ne $null)
+  if(!($RecipientEmailaddres -match '@') -and $SenderEmailaddres -match '@')
     {
-     sender -Sender  $SenderEmailaddres
+     Write-Host "Sender"
+     $mail=sender -Sender  $SenderEmailaddres
     }
 
-   if($RecipientEmailaddres -ne $null -and $SenderEmailaddres -eq $null)
+   if($RecipientEmailaddres -match '@' -and !($SenderEmailaddres -match '@'))
     {
-     Receiver -Receiver $RecipientEmailaddres
+    Write-Host "Receiver"
+     $mail=Receiver
     }
    
-   if($RecipientEmailaddres -ne $null -and $SenderEmailaddres -ne $null)
-    {
-      SendReceive -Sender $SenderEmailaddres -Receiver $RecipientEmailaddres
+   if($RecipientEmailaddres -match '@' -and $SenderEmailaddres -match '@')
+    { Write-Host "SendReceive"
+      $Mail=SendReceive -Sender $SenderEmailaddres -Receiver $RecipientEmailaddres
     }
     
 
 }
-
+$mail.count
+$mail |export-csv -nti dump.csv
+if(!($SubjectQuery -eq $null))
+{
 $Mails=$Mail |?{$_.subject -match $SubJectQuery}
+}
+else
+{
+$Mails=$mail
+}
 
 foreach($msg in $mails)
 {
@@ -143,8 +185,7 @@ $obj |add-member -NotePropertyname Type -NotePropertyValue $type
 $obj |export-csv -nti $Resultfile  -append
 $obj
 
-[string]$SubJectQuery,
-$mails=$msg |?{$_.Subject -match $SubJectQuery}
+
 
 }
 
