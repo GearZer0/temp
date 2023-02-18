@@ -10,7 +10,6 @@ param(
 
 
 
-
 function MessageTrace
 {
 param([string]$RecipientAddress,$Subject)
@@ -79,6 +78,8 @@ if($mail.count -gt 0)
 $sender=@()
 $receiver=@()   
 $i=1
+$mx=$null;$mx=@()
+$Rep=$null;$Rep=@()
 while($i)
 {
 $i=0
@@ -86,17 +87,21 @@ if($mail.count -eq 1)
    {
    Write-Host "The email eas received by single recipient $($mail.recipientaddress)"
    $Subject=$Mail.Subject
-   $mx=$null
+   
    $msg= MessageTrace  -RecipientAddress  $mail.RecipientAddress -Subject  $Subject  
-   $mx=$msg |?{$_.subject -match $subject}
+   $mx+=$msg |?{$_.subject -match $subject}
+   $Rep+=$msg |?{$_.subject -match $subject}
 }
 else
-   { $Subject=$Mail[0].Subject
+   { 
+     $Subject=$Mail[0].Subject
      $mx=$null;$mx=@()
      foreach($ml in $mail)
         {
-           $mx+= MessageTrace  -RecipientAddress  $ml.RecipientAddress -Subject  $Subject  
-        }
+           $msg= MessageTrace  -RecipientAddress  $ml.RecipientAddress -Subject  $Subject  
+           $mx+=$msg |?{$_.subject -match $subject}
+           $Rep+=$msg |?{$_.subject -match $subject}
+          }
    }
 $r=1
 while($r)
@@ -104,7 +109,6 @@ while($r)
 Write-Host "Inside the loop"
 $sender+=$mx |select SenderAddress
 $receiver+=$mx |select RecipientAddress
-#$receiver
 
 $mom=$null
 Write-host "Outside the loop"
@@ -121,9 +125,15 @@ foreach($rec in $receiver)
         {  
           
            Write-host "$($y) is not scanned yet"
-           $rmp= MessageTrace  -RecipientAddress  $y -Subject  $Subject 
+           $rmp= MessageTrace  -RecipientAddress  $y -Subject  $Subject  
+           $rmp=$rmp |?{$_.subject -match $subject}
+           $Rep+=$Rmp |?{$_.subject -match $subject}
+           if($rmp.subject -match $subject)
+           {
+           
            $sender+=$y |select @{n="SenderAddress";e={$_}}
            $receiver+=$rmp |select RecipientAddress
+           }
         }
 
         else
@@ -151,10 +161,10 @@ Write-Host "Email not found"
 
 Write-Host "Preparing Report........................" -ForegroundColor Green
 
-$data =$mx|?{$_.subject -match $subject}
+#$data =$mx|?{$_.subject -match $subject}
 
 
-foreach($mail in $data)
+foreach($mail in $Rep)
 {
 $sender=($mail).'SenderAddress'
 $Reipient=($mail).'RecipientAddress'
@@ -193,7 +203,7 @@ $obj |add-member -NotePropertyname Recipient -NotePropertyValue $Reipient
 $obj |add-member -NotePropertyname Status -NotePropertyValue $status
 $obj |add-member -NotePropertyname Type -NotePropertyValue $type
 
-$obj |sort-object date |export-csv -nti $Resultfile  -append
+$obj |export-csv -nti $Resultfile  -append
 
 
 
