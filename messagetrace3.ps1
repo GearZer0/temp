@@ -11,6 +11,72 @@ param(
 
 
 
+function MessageTrace
+{
+param([string]$RecipientAddress,$Subject)
+    $mail=$null
+    $mail=@()
+    $i=1
+    $z=10
+   Write-Host "MESSAGE TRACE CALL FOR USER $($RecipientAddress)"
+    while($z -gt 0)
+           {
+              $date=(get-date).AddDays(-$z)
+              $enddate= get-date
+              Write-host "Scanning Message Trace for Recipeint $($RecipientAddress)  for the $($subject) $z  days back"
+              while($i  -lt $pages)
+                  {     
+                     $mail+=Get-MessageTrace -Page $i -PageSize 5000 -SenderAddress $RecipientAddress -startdate $date -enddate $enddate
+                      $i++
+                    Write-host "Message Trace going for user $($RecipientAddress) "
+                    
+                    }
+             $z=$z-1
+           }
+           $mail |export-csv $Resultfile -Append
+           $mails=$mail |?{$_.subject -match $Subject}
+           
+           
+           
+          
+$value=$null           
+$value=@()
+           if($mails.count -eq 0)
+           {
+           $value=$null
+           }
+
+           if($mails.count -eq 1)
+           {
+           $obj=new-object psobject
+           $obj |add-member -NotePropertyname SenderAddress -NotePropertyValue $mails.SenderAddress
+           $obj |add-member -NotePropertyname RecipientAddress -NotePropertyValue $mails.RecipientAddress 
+           $value+=$obj
+           }
+         if($mails.count -gt 1)
+           { 
+            foreach($ml in $mails)
+            {
+             $obj=new-object psobject
+             $obj |add-member -NotePropertyname SenderAddress -NotePropertyValue $ml.SenderAddress
+             $obj |add-member -NotePropertyname RecipientAddress -NotePropertyValue $ml.RecipientAddress
+             $value+=$obj
+            }
+           }
+
+
+return $value
+} 
+  
+
+
+
+
+
+
+#Scripts starts here#################################
+
+
 $a="######################## FINDING THE SENDER OF THE EMAIL##########"
 Write-host $a -ForegroundColor "Green"
 
@@ -20,95 +86,108 @@ $z=10
 while($z -gt 0)
 {
     $date=(get-date).AddDays(-$z)
-    $enddate=(get-date).AddDays(-$z +1)
-   Write-host "Scanning Message Trace $($MessageID)   $z days back"
+    $enddate= get-date
+    Write-host "Scanning Message Trace $($MessageID)   $z days back"
     while($i  -lt $pages)
 {     
       $mail+=Get-MessageTrace -Page $i -PageSize 5000 -MessageID $MessageID -startdate $date -enddate $enddate
     $i++
       
 }
-       if($mail.count -gt 0)
-           {
-				$z=1
-				Write-host "Mail found"
-                                $i=$page
-	   }
-        else
-       {
-
-       $i=1
-       }
-
-
 $z=$z-1
 }
+#================ SEARCHING OF EMAIL  ENDS===================##
 
-if ($mail.count -gt 0)
+
+if($mail.count -gt 0)
 {
+   Write-Host "Email Found. The email was send by $($mail[0].senderaddress)"
+   $a="#Getting the list of recipients of Email"
+   Write-Host $a
+   
 
-$sender=($mail.senderaddress |group-object).name
-$rcvd=$mail |select RecipientAddress
-$date= $mail[0].received |%{get-date $_}
-$enddate=$date.adddays(3)
-$subject=$mail[0].Subject
-
-$save=$rcvd.count
-sleep(5)
-Write-host "The sender of the email is $($sender) and It was received by $($rcvd.count) number of People"
-$a="#################### Email Sender Found################"
-Write-host $a -ForegroundColor "Green"
-
-$flag=1
-while($flag)
-{
-
-foreach($r in $rcvd)
-{
-
-
-$pages=100
+$sender=@()
+$receiver=@()   
 $i=1
- while($i  -lt $pages)
-{     
-      $mail+=Get-MessageTrace -Page $i -PageSize 5000  -senderaddress $r.recipientaddress   -startdate $date -enddate $enddate
-      $i++
-     
-      
-}
-Write-Host "Scanning for User $($r.recipientaddress)"
-
-
-}
-$sample=$null
-$sample=$mail |?{$_.subject -match $subject}
-$test=$sample |group-object RecipientAddress| ?{$_.count -eq 1}
-if($test.count -gt 0)
+while($i)
 {
-Write-Host "Scanning Done"
-$flag=0
+$i=0
+if($mail.count -eq 1)
+   {
+   $mx=$null
+   $mx= MessageTrace  -RecipientAddress  $mail.RecipientAddress -Subject  $Subject  
+   
+}
+else
+   {
+     $mx=$null;$mx=@()
+     foreach($ml in $mail)
+        {
+           $mx+= MessageTrace  -RecipientAddress  $ml.RecipientAddress -Subject  $Subject  
+        }
+   }
+$r=1
+while($r)
+{
+$sender+=$mx |select SenderAddress
+$receiver+=$mx |select RecipientAddress
+#$receiver
+
+$mom=$null
+$check=$sender.SenderAddress + $receiver.RecipientAddress |group-object
+if ($check |?{$_.count -lt 2})
+{
+foreach($rec in $receiver)
+      { 
+        Write-host "Inside the loop"
+        $y=$rec.RecipientAddress
+        $z=$sender |?{$_.SenderAddress -match $y}
+        if($z.count -eq 0)
+        {  
+          
+           Write-host "$($y) is not scanned yet"
+           $rmp= MessageTrace  -RecipientAddress  $y -Subject  $Subject 
+           $sender+=$y |select @{n="SenderAddress";e={$_}}
+           $receiver+=$rmp |select RecipientAddress
+        }
+
+        else
+        {
+        Write-host "$($y) Already Scanned scanned yet"
+        }  
+      } #forEach loop
 }
 else
 {
-$rcvd=$test|?{$_.count -lt 2} |select @{n="RecipientAddress";e={$_.name}}
-$date= ($test |sort-object Received)[0].Received
-$enddate=$date.adddays(3)
+$r=0
+$i=0
+}
+
+
+}
 }
 }
 
-$mails |export-csv -nti  dump.csv
-$mails=$mail |?{$_.subject -match  $subject} 
-$mails |export-csv -nti sample.csv
-foreach($msg in $mails)
+else
 {
-Write-host "Scanning emails"
-$sender=($msg).'SenderAddress'
-$Reipient=($msg).'RecipientAddress'
-$MsgId=($msg).'MessagetraceID'.guid
-$date=$msg.Received
-$Status=$msg.Status
+
+Write-Host "Email not found"
+}
+
+Write-Host "Preparing Report........................" -ForegroundColor Green
+
+$data =import-csv $Resultfile
+
+del $Resultfile
+foreach($mail in $data)
+{
+$sender=($mail).'SenderAddress'
+$Reipient=($mail).'RecipientAddress'
+$MsgId=($mail).'MessageID'
+$date=$mail.Received
+$Status=$mail.Status
 $Type=$null
-$Sub=$msg.Subject
+$Sub=$Mail.Subject
 if(!($Sub  -match "Re:" -and $Sub -match "Fw:"))
    {
    $Type="First Mail Send"
@@ -139,36 +218,17 @@ $obj |add-member -NotePropertyname Recipient -NotePropertyValue $Reipient
 $obj |add-member -NotePropertyname Status -NotePropertyValue $status
 $obj |add-member -NotePropertyname Type -NotePropertyValue $type
 
-$obj |export-csv -nti $Resultfile  -append
-$obj
+$obj |sort-object date |export-csv -nti $Resultfile  -append
 
 
 
 
 }
 
-$sample1=import-csv $Resultfile |?{!($_.type -match "First")}
 
-
-if($sample1.count -gt $save.count)
-{
-
-Write-host "Email is suspicious in nature"
-
-}
-}
-
-else
-{
-
-Write-host "Couldnt find the Message ID"
-}
-
-
-Write-Host " Script Complete   !!"
+Write-Host "Search Complete!!!"
 
 
 
 
 
-   
