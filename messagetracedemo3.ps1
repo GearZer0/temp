@@ -90,6 +90,27 @@ function message_trace {
             return
         }
 
+        # update the statistics variables
+        $global:all_returned_email += $messagesThisPage
+        $global:total_pages_searched++
+
+        # filter our results by subject
+        $filtered_result = $messagesThisPage | Where-Object {$psitem.subject -like "*$subject*"}
+
+        # more statistics for the log file, for each senderaddress
+        $users_stats = $messagesThisPage | Select-Object @{N = 'senderaddress';  E = {$senderaddress}}, @{N = 'page nr.';  E = {$page}}, 
+            @{N = 'messages on this page';  E = {$messagesThisPage.count}}, @{N = 'hit on subject';  E = {($PSItem | Where-Object {$psitem.subject -like "*$subject*"}).subject}},
+                @{N = 'date';  E = {$psitem | Select-Object -ExpandProperty received}}
+        $global:all_users_stats += $users_stats
+
+        # add to our final output array
+        $global:final_output += $filtered_result
+        $message_list += $filtered_result
+
+        # write output and increase the page count
+        Write-Output "There were $($messagesThisPage.count) messages on page $page..."
+        $page++
+
         # rest of the code
     } until ($messagesThisPage.count -lt $pageSize)
 }
