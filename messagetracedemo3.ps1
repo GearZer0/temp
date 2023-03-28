@@ -76,7 +76,9 @@ function message_trace {
         $intervalStack = @([PSCustomObject]@{ Start = $start; End = $end })
 
         while ($intervalStack.Count -gt 0) {
-            $currentInterval = $intervalStack.Pop()
+            $currentInterval = $intervalStack[-1]
+            $intervalStack = $intervalStack | Where-Object { $_ -ne $currentInterval }
+
             $currentStart = $currentInterval.Start
             $currentEnd = $currentInterval.End
 
@@ -91,8 +93,8 @@ function message_trace {
             if ($messagesThisPage.count -eq $pageSize) {
                 $midPoint = (Get-Date $currentStart).AddSeconds(((Get-Date $currentEnd) - (Get-Date $currentStart)).TotalSeconds / 2)
                 Write-Output "Found 5000 messages in the time interval, splitting into smaller intervals..."
-                $intervalStack.Push([PSCustomObject]@{ Start = $midPoint; End = $currentEnd })
-                $intervalStack.Push([PSCustomObject]@{ Start = $currentStart; End = $midPoint })
+                $intervalStack += ([PSCustomObject]@{ Start = $midPoint; End = $currentEnd })
+                $intervalStack += ([PSCustomObject]@{ Start = $currentStart; End = $midPoint })
             } else {
                 # update the statistics variables
                 $global:all_returned_email += $messagesThisPage
