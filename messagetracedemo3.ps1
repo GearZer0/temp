@@ -69,13 +69,16 @@ function message_trace {
         $senderaddress, $subject
     )
 
-    $page = 1
-    $intervalStack = @([PSCustomObject]@{ Start = $start; End = $end })
+    $intervalStack = New-Object System.Collections.Generic.Stack[PSObject]
+    $intervalStack.Push([PSCustomObject]@{ Start = $start; End = $end })
 
     while ($intervalStack.Count -gt 0) {
         $currentInterval = $intervalStack.Pop()
         $currentStart = $currentInterval.Start
         $currentEnd = $currentInterval.End
+
+        $page = 1
+        $messagesThisPage = $null
 
         do {
             Write-Output "Getting page $page of messages..."
@@ -91,23 +94,18 @@ function message_trace {
                 Write-Output "Found 5000 messages in the time interval, splitting into smaller intervals..."
                 $intervalStack.Push([PSCustomObject]@{ Start = $currentStart; End = $midPoint })
                 $intervalStack.Push([PSCustomObject]@{ Start = $midPoint; End = $currentEnd })
-                break
+                continue
             }
 
-            foreach ($message in $messagesThisPage) {
-                if ($message.Subject -like "*$subject*") {
-                    $recipients = $message.RecipientAddress.split(";")
-                    Write-Output "Sender: $($message.senderAddress)"
-                    Write-Output "Subject: $($message.Subject)"
-                    Write-Output "Recipients: $($recipients -join ', ')"
-                    Write-Output ""
-                }
+            $filtered_result = $messagesThisPage | Where-Object {$_.subject -like "*$subject*"}
+
+            foreach ($message in $filtered_result) {
+                $recipient = $message.RecipientAddress
+                message_trace -senderaddress $recipient -subject $subject
             }
 
             $page++
         } until ($messagesThisPage.count -lt $pageSize)
-
-        $page = 1
     }
 }
 
