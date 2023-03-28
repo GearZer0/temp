@@ -1,3 +1,16 @@
+<# current script function - 
+1. CSV with a list of email addresses, together with an email subject.
+2. Iterate through the list of email addresses and the email subject.
+3. Perform a message trace for each email address and email subject using the Get-MessageTrace cmdlet.
+4. Extract all the recipients.
+5. Use a loop to iterate through all the recipients and perform a message trace on each recipient, together with an email subject that was identified in step 1
+6. Repeat steps 4 and 5 until there are no more results.
+7. Repeat steps 2 to 6 for all initial email addresses and subjects until there are no more results.
+8. The desired output will have all the email events and all its available fields to a csv file.
+9. Create a log that logs the number of page and its message searched, Total number of message searched, and total time taken.
+Added no.9 the log file to follow https://cynicalsys.com/2019/09/13/working-with-large-exchange-messages-traces-in-powershell/
+#>
+
 # parameters to enter from the PowerShell console
 param(
     [Parameter(Mandatory=$true)]
@@ -71,16 +84,16 @@ function message_trace {
 
     $intervalStack = New-Object System.Collections.Generic.Stack[PSObject]
     $intervalStack.Push([PSCustomObject]@{ Start = $start; End = $end })
-
+    
     while ($intervalStack.Count -gt 0) {
         $currentInterval = $intervalStack.Pop()
         $currentStart = $currentInterval.Start
         $currentEnd = $currentInterval.End
 
         $page = 1
-        $messagesThisPage = $null
+        $continuePaging = $true
 
-        do {
+        while ($continuePaging) {
             Write-Output "Getting page $page of messages..."
             try {
                 $messagesThisPage = Get-MessageTrace -SenderAddress $senderaddress -StartDate $currentStart -EndDate $currentEnd -PageSize $pageSize -Page $page
@@ -92,20 +105,36 @@ function message_trace {
             if ($messagesThisPage.count -eq $pageSize) {
                 $midPoint = (Get-Date $currentStart).AddSeconds(((Get-Date $currentEnd) - (Get-Date $currentStart)).TotalSeconds / 2)
                 Write-Output "Found 5000 messages in the time interval, splitting into smaller intervals..."
-                $intervalStack.Push([PSCustomObject]@{ Start = $currentStart; End = $midPoint })
-                $intervalStack.Push([PSCustomObject]@{ Start = $midPoint; End = $currentEnd })
-                continue
+                $intervalStack.Push(@{ Start = $currentStart; End = $midPoint })
+                $intervalStack.Push(@{ Start = $midPoint; End = $currentEnd })
+
+                $continuePaging = $false
+            } else {
+                # update the statistics variables
+                $global:all_returned_email += $messagesThisPage
+                $global:total_pages_searched++
+
+                # filter our results by subject
+                $filtered_result = $messagesThisPage | Where-Object { $psitem.subject -like "*$subject*" }
+
+                # more statistics for the log file, for each senderaddress
+                $users_stats = $messagesThisPage | Select-Object @{ N = 'senderaddress'; E = { $senderaddress } }, @{ N = 'page nr.'; E = { $page } },
+                @{ N = 'messages on this page'; E = { $messagesThisPage.count } }, @{ N = 'hit on subject'; E = { ($PSItem | Where-Object { $psitem.subject -like "*$subject*" }).subject } },
+                @{ N = 'date'; E = { $psitem | Select-Object -ExpandProperty received } }
+                $global:all_users_stats += $users_stats
+
+                # add to our final output array
+                $global:final_output += $filtered_result
+
+                # write output and increase the page count
+                Write-Output "There were $($messagesThisPage.count) messages on page $page..."
+                $page++
+
+                if ($messagesThisPage.count -lt $pageSize) {
+                    $continuePaging = $false
+                }
             }
-
-            $filtered_result = $messagesThisPage | Where-Object {$_.subject -like "*$subject*"}
-
-            foreach ($message in $filtered_result) {
-                $recipient = $message.RecipientAddress
-                message_trace -senderaddress $recipient -subject $subject
-            }
-
-            $page++
-        } until ($messagesThisPage.count -lt $pageSize)
+        }
     }
 }
 
