@@ -122,10 +122,6 @@ function message_trace {
     } until ($messagesThisPage.count -lt $pageSize)
 }
 
-# Call the function with the initial start and end dates
-$start = "2023-03-01"
-$end = "2023-03-31"
-message_trace -senderaddress "noreply@example.com" -subject "example_subject" -start $start -end $end
 
 In this version of the code, I use a stack to keep track of the intervals. If there are more than 5000 objects in the current interval, it is split into two smaller intervals and added to the stack. The script processes the intervals one by one and updates the statistics
 
