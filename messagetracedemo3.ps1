@@ -77,11 +77,11 @@ if ($end -like "now") {
 }
 
 # function for the message trace itself, takes two parameters - senderaddress and subject
-function message_trace {
+function message_trace_recursive {
     param (
         $senderaddress, $subject
     )
-
+    
     $intervalStack = New-Object System.Collections.Generic.Stack[PSObject]
     $intervalStack.Push([PSCustomObject]@{ Start = $start; End = $end })
     
@@ -94,7 +94,7 @@ function message_trace {
         $continuePaging = $true
 
         while ($continuePaging) {
-            Write-Output "Getting page $page of messages..."
+            Write-Output "Getting page $page of messages for $senderaddress..."
             try {
                 $messagesThisPage = Get-MessageTrace -SenderAddress $senderaddress -StartDate $currentStart -EndDate $currentEnd -PageSize $pageSize -Page $page
             }
@@ -132,6 +132,12 @@ function message_trace {
 
                 if ($messagesThisPage.count -lt $pageSize) {
                     $continuePaging = $false
+                }
+
+                # Process recipients
+                $recipients = $filtered_result | Select-Object -ExpandProperty RecipientAddress
+                foreach ($recipient in $recipients) {
+                    message_trace_recursive -senderaddress $recipient -subject $subject
                 }
             }
         }
