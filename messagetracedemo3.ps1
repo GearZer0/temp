@@ -66,10 +66,9 @@ if ($end -like "now") {
 # function for the message trace itself, takes two parameters - senderaddress and subject
 function message_trace {
     param (
-        $senderaddress, $subject, $start, $end
+        $senderaddress, $subject
     )
 
-    $pageSize = 5000
     $intervalStack = New-Object 'System.Collections.Generic.List[PSObject]'
     $intervalStack.Add([PSCustomObject]@{ Start = $start; End = $end })
 
