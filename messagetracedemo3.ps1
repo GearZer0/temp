@@ -84,16 +84,15 @@ function message_trace {
 
     $intervalStack = New-Object System.Collections.Generic.Stack[PSObject]
     $intervalStack.Push([PSCustomObject]@{ Start = $start; End = $end })
-    
+
     while ($intervalStack.Count -gt 0) {
         $currentInterval = $intervalStack.Pop()
         $currentStart = $currentInterval.Start
         $currentEnd = $currentInterval.End
 
         $page = 1
-        $continuePaging = $true
 
-        while ($continuePaging) {
+        do {
             Write-Output "Getting page $page of messages for $senderaddress..."
             try {
                 $messagesThisPage = Get-MessageTrace -SenderAddress $senderaddress -StartDate $currentStart -EndDate $currentEnd -PageSize $pageSize -Page $page
@@ -132,6 +131,8 @@ function message_trace {
 
                 if ($messagesThisPage.count -lt $pageSize) {
                     $continuePaging = $false
+                } else {
+                    $continuePaging = $true
                 }
 
                 # Process recipients
@@ -140,9 +141,12 @@ function message_trace {
                     message_trace -senderaddress $recipient -subject $subject
                 }
             }
-        }
+        } while ($continuePaging)
     }
 }
+
+The change in the script is the proper handling of the $continuePaging variable. The do-while loop now only continues when $continuePaging is set to $true. This should correctly move the script to the next page.
+
 
 
 #variables for usage in the function for loop
