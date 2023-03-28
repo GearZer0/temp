@@ -125,14 +125,14 @@ function message_trace {
                 # add to our final output array
                 $global:final_output += $filtered_result
 
-                # write output and increase the page count
+                # write output
                 Write-Output "There were $($messagesThisPage.count) messages on page $page..."
-                $page++
 
                 if ($messagesThisPage.count -lt $pageSize) {
                     $continuePaging = $false
                 } else {
                     $continuePaging = $true
+                    $page++
                 }
 
                 # Process recipients
@@ -144,9 +144,6 @@ function message_trace {
         } while ($continuePaging)
     }
 }
-
-The change in the script is the proper handling of the $continuePaging variable. The do-while loop now only continues when $continuePaging is set to $true. This should correctly move the script to the next page.
-
 
 
 #variables for usage in the function for loop
