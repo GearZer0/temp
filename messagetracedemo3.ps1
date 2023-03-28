@@ -73,47 +73,60 @@ function message_trace {
     $message_list = @()
 
     do {
-        Write-Output "Getting page $page of messages..."
-        try {
-            $messagesThisPage = Get-MessageTrace -SenderAddress $senderaddress -StartDate $start -EndDate $end -PageSize $pageSize -Page $page
+        $intervalStack = @([PSCustomObject]@{ Start = $start; End = $end })
+
+        while ($intervalStack.Count -gt 0) {
+            $currentInterval = $intervalStack.Pop()
+            $currentStart = $currentInterval.Start
+            $currentEnd = $currentInterval.End
+
+            Write-Output "Getting page $page of messages..."
+            try {
+                $messagesThisPage = Get-MessageTrace -SenderAddress $senderaddress -StartDate $currentStart -EndDate $currentEnd -PageSize $pageSize -Page $page
+            }
+            catch {
+                $PSItem
+            }
+
+            if ($messagesThisPage.count -eq $pageSize) {
+                $midPoint = (Get-Date $currentStart).AddSeconds(((Get-Date $currentEnd) - (Get-Date $currentStart)).TotalSeconds / 2)
+                Write-Output "Found 5000 messages in the time interval, splitting into smaller intervals..."
+                $intervalStack.Push([PSCustomObject]@{ Start = $midPoint; End = $currentEnd })
+                $intervalStack.Push([PSCustomObject]@{ Start = $currentStart; End = $midPoint })
+            } else {
+                # update the statistics variables
+                $global:all_returned_email += $messagesThisPage
+                $global:total_pages_searched++
+
+                # filter our results by subject
+                $filtered_result = $messagesThisPage | Where-Object {$psitem.subject -like "*$subject*"}
+
+                # more statistics for the log file, for each senderaddress
+                $users_stats = $messagesThisPage | Select-Object @{N = 'senderaddress';  E = {$senderaddress}}, @{N = 'page nr.';  E = {$page}}, 
+                    @{N = 'messages on this page';  E = {$messagesThisPage.count}}, @{N = 'hit on subject';  E = {($PSItem | Where-Object {$psitem.subject -like "*$subject*"}).subject}},
+                        @{N = 'date';  E = {$psitem | Select-Object -ExpandProperty received}}
+                $global:all_users_stats += $users_stats
+
+                # add to our final output array
+                $global:final_output += $filtered_result
+                $message_list += $filtered_result
+
+                # write output
+                Write-Output "There were $($messagesThisPage.count) messages on page $page..."
+            }
         }
-        catch {
-            $PSItem
-        }
 
-        if ($messagesThisPage.count -eq $pageSize) {
-            $midPoint = (Get-Date $start).AddSeconds(((Get-Date $end) - (Get-Date $start)).TotalSeconds / 2)
-            Write-Output "Found 5000 messages in the time interval, splitting into smaller intervals..."
-
-            message_trace -senderaddress $senderaddress -subject $subject -startDate $start -endDate $midPoint
-            message_trace -senderaddress $senderaddress -subject $subject -startDate $midPoint -endDate $end
-            return
-        }
-
-        # update the statistics variables
-        $global:all_returned_email += $messagesThisPage
-        $global:total_pages_searched++
-
-        # filter our results by subject
-        $filtered_result = $messagesThisPage | Where-Object {$psitem.subject -like "*$subject*"}
-
-        # more statistics for the log file, for each senderaddress
-        $users_stats = $messagesThisPage | Select-Object @{N = 'senderaddress';  E = {$senderaddress}}, @{N = 'page nr.';  E = {$page}}, 
-            @{N = 'messages on this page';  E = {$messagesThisPage.count}}, @{N = 'hit on subject';  E = {($PSItem | Where-Object {$psitem.subject -like "*$subject*"}).subject}},
-                @{N = 'date';  E = {$psitem | Select-Object -ExpandProperty received}}
-        $global:all_users_stats += $users_stats
-
-        # add to our final output array
-        $global:final_output += $filtered_result
-        $message_list += $filtered_result
-
-        # write output and increase the page count
-        Write-Output "There were $($messagesThisPage.count) messages on page $page..."
         $page++
-
-        # rest of the code
     } until ($messagesThisPage.count -lt $pageSize)
 }
+
+# Call the function with the initial start and end dates
+$start = "2023-03-01"
+$end = "2023-03-31"
+message_trace -senderaddress "noreply@example.com" -subject "example_subject" -start $start -end $end
+
+In this version of the code, I use a stack to keep track of the intervals. If there are more than 5000 objects in the current interval, it is split into two smaller intervals and added to the stack. The script processes the intervals one by one and updates the statistics
+
 
 #variables for usage in the function for loop
 $subject_for_loop = ""
