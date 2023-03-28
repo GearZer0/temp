@@ -69,16 +69,13 @@ function message_trace {
         $senderaddress, $subject
     )
 
-    $intervalStack = New-Object 'System.Collections.Generic.List[PSObject]'
-    $intervalStack.Add([PSCustomObject]@{ Start = $start; End = $end })
+    $page = 1
+    $intervalStack = @([PSCustomObject]@{ Start = $start; End = $end })
 
     while ($intervalStack.Count -gt 0) {
-        $currentInterval = $intervalStack[0]
-        $intervalStack.RemoveAt(0)
-
+        $currentInterval = $intervalStack.Pop()
         $currentStart = $currentInterval.Start
         $currentEnd = $currentInterval.End
-        $page = 1
 
         do {
             Write-Output "Getting page $page of messages..."
@@ -92,33 +89,25 @@ function message_trace {
             if ($messagesThisPage.count -eq $pageSize) {
                 $midPoint = (Get-Date $currentStart).AddSeconds(((Get-Date $currentEnd) - (Get-Date $currentStart)).TotalSeconds / 2)
                 Write-Output "Found 5000 messages in the time interval, splitting into smaller intervals..."
-
-                $intervalStack.Add([PSCustomObject]@{ Start = $currentStart; End = $midPoint })
-                $intervalStack.Add([PSCustomObject]@{ Start = $midPoint; End = $currentEnd })
-
+                $intervalStack.Push([PSCustomObject]@{ Start = $currentStart; End = $midPoint })
+                $intervalStack.Push([PSCustomObject]@{ Start = $midPoint; End = $currentEnd })
                 break
             }
 
-            # update the statistics variables
-            $global:all_returned_email += $messagesThisPage
-            $global:total_pages_searched++
+            foreach ($message in $messagesThisPage) {
+                if ($message.Subject -like "*$subject*") {
+                    $recipients = $message.RecipientAddress.split(";")
+                    Write-Output "Sender: $($message.senderAddress)"
+                    Write-Output "Subject: $($message.Subject)"
+                    Write-Output "Recipients: $($recipients -join ', ')"
+                    Write-Output ""
+                }
+            }
 
-            # filter our results by subject
-            $filtered_result = $messagesThisPage | Where-Object {$psitem.subject -like "*$subject*"}
-
-            # more statistics for the log file, for each senderaddress
-            $users_stats = $messagesThisPage | Select-Object @{N = 'senderaddress';  E = {$senderaddress}}, @{N = 'page nr.';  E = {$page}}, 
-                @{N = 'messages on this page';  E = {$messagesThisPage.count}}, @{N = 'hit on subject';  E = {($PSItem | Where-Object {$psitem.subject -like "*$subject*"}).subject}},
-                    @{N = 'date';  E = {$psitem | Select-Object -ExpandProperty received}}
-            $global:all_users_stats += $users_stats
-
-            # add to our final output array
-            $global:final_output += $filtered_result
-
-            # write output and increase the page count
-            Write-Output "There were $($messagesThisPage.count) messages on page $page..."
             $page++
         } until ($messagesThisPage.count -lt $pageSize)
+
+        $page = 1
     }
 }
 
