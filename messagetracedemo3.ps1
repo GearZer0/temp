@@ -77,11 +77,11 @@ if ($end -like "now") {
 }
 
 # function for the message trace itself, takes two parameters - senderaddress and subject
-function message_trace_recursive {
+function message_trace {
     param (
         $senderaddress, $subject
     )
-    
+
     $intervalStack = New-Object System.Collections.Generic.Stack[PSObject]
     $intervalStack.Push([PSCustomObject]@{ Start = $start; End = $end })
     
@@ -137,7 +137,7 @@ function message_trace_recursive {
                 # Process recipients
                 $recipients = $filtered_result | Select-Object -ExpandProperty RecipientAddress
                 foreach ($recipient in $recipients) {
-                    message_trace_recursive -senderaddress $recipient -subject $subject
+                    message_trace -senderaddress $recipient -subject $subject
                 }
             }
         }
