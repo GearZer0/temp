@@ -79,44 +79,49 @@ if ($end -like "now") {
 # function for the message trace itself, takes two parameters - senderaddress and subject
 function message_trace {
     param (
-        $senderaddress, $subject
+        $senderaddresses, $subject
     )
 
-    $intervalStack = New-Object System.Collections.Generic.Stack[PSObject]
-    $intervalStack.Push([PSCustomObject]@{ Start = $start; End = $end })
+    $recipientsToProcess = @()
 
-    while ($intervalStack.Count -gt 0) {
-        $currentInterval = $intervalStack.Pop()
-        $currentStart = $currentInterval.Start
-        $currentEnd = $currentInterval.End
+    foreach ($senderaddress in $senderaddresses) {
+        $intervalStack = New-Object System.Collections.Generic.Stack[PSObject]
+        $intervalStack.Push([PSCustomObject]@{ Start = $start; End = $end })
 
-        $page = 1
-        $allMessages = @()
+        while ($intervalStack.Count -gt 0) {
+            $currentInterval = $intervalStack.Pop()
+            $currentStart = $currentInterval.Start
+            $currentEnd = $currentInterval.End
 
-        do {
-            Write-Output "Getting page $page of messages for $senderaddress..."
-            try {
-                $messagesThisPage = Get-MessageTrace -SenderAddress $senderaddress -StartDate $currentStart -EndDate $currentEnd -PageSize $pageSize -Page $page
-                $allMessages += $messagesThisPage
-            }
-            catch {
-                $PSItem
-            }
+            $page = 1
+            $allMessages = @()
 
-            if ($messagesThisPage.count -eq $pageSize) {
-                $page++
-            } else {
-                $continuePaging = $false
-            }
-        } while ($continuePaging)
+            do {
+                Write-Output "Getting page $page of messages for $senderaddress..."
+                try {
+                    $messagesThisPage = Get-MessageTrace -SenderAddress $senderaddress -StartDate $currentStart -EndDate $currentEnd -PageSize $pageSize -Page $page
+                    $allMessages += $messagesThisPage
+                }
+                catch {
+                    $PSItem
+                }
 
-        $filtered_result = $allMessages | Where-Object { $psitem.subject -like "*$subject*" }
-        $global:final_output += $filtered_result
-        $recipients = $filtered_result | Select-Object -ExpandProperty RecipientAddress
+                if ($messagesThisPage.count -eq $pageSize) {
+                    $page++
+                } else {
+                    $continuePaging = $false
+                }
+            } while ($continuePaging)
 
-        foreach ($recipient in $recipients) {
-            message_trace -senderaddress $recipient -subject $subject
+            $filtered_result = $allMessages | Where-Object { $psitem.subject -like "*$subject*" }
+            $global:final_output += $filtered_result
+            $recipients = $filtered_result | Select-Object -ExpandProperty RecipientAddress
+            $recipientsToProcess += $recipients
         }
+    }
+
+    if ($recipientsToProcess) {
+        message_trace -senderaddresses $recipientsToProcess -subject $subject
     }
 }
 
