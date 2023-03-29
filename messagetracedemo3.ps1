@@ -79,49 +79,53 @@ if ($end -like "now") {
 # function for the message trace itself, takes two parameters - senderaddress and subject
 function message_trace {
     param (
-        $senderaddresses, $subject
+        $senderaddress, $subject, $intervalSize = '1'
     )
+    
+    $page = 1
+    $message_list = @()
 
-    $recipientsToProcess = @()
+    while ($start -lt (Get-Date)) {
+        $page = 1
+        do {
+            Write-Output "Getting page $page of messages in interval $($start.ToString('yyyy-MM-dd')) to $($end.ToString('yyyy-MM-dd'))..."
+            try {
+                $messagesThisPage = Get-MessageTrace -SenderAddress $senderaddress -StartDate $start -EndDate $end -PageSize $pageSize -Page $page
+            }
+            catch {
+                $PSItem
+            }
+        
+            # filter our results by subject
+            $filtered_result = $messagesThisPage | Where-Object {$psitem.subject -like "*$subject*"}
 
-    foreach ($senderaddress in $senderaddresses) {
-        $intervalStack = New-Object System.Collections.Generic.Stack[PSObject]
-        $intervalStack.Push([PSCustomObject]@{ Start = $start; End = $end })
-
-        while ($intervalStack.Count -gt 0) {
-            $currentInterval = $intervalStack.Pop()
-            $currentStart = $currentInterval.Start
-            $currentEnd = $currentInterval.End
-
-            $page = 1
-            $allMessages = @()
-
-            do {
-                Write-Output "Getting page $page of messages for $senderaddress..."
-                try {
-                    $messagesThisPage = Get-MessageTrace -SenderAddress $senderaddress -StartDate $currentStart -EndDate $currentEnd -PageSize $pageSize -Page $page
-                    $allMessages += $messagesThisPage
-                }
-                catch {
-                    $PSItem
-                }
-
-                if ($messagesThisPage.count -eq $pageSize) {
-                    $page++
-                } else {
-                    $continuePaging = $false
-                }
-            } while ($continuePaging)
-
-            $filtered_result = $allMessages | Where-Object { $psitem.subject -like "*$subject*" }
+            # add to our final output array
             $global:final_output += $filtered_result
-            $recipients = $filtered_result | Select-Object -ExpandProperty RecipientAddress
-            $recipientsToProcess += $recipients
-        }
+            $message_list += $filtered_result
+
+            # write output and increase the page count
+            Write-Output "There were $($messagesThisPage.count) messages on page $page..."
+            $page++
+        
+        } until ($messagesThisPage.count -lt $pageSize)
+
+        # Move to the next interval
+        $end = $start
+        $start = $start.AddDays(-$intervalSize)
     }
 
-    if ($recipientsToProcess) {
-        message_trace -senderaddresses $recipientsToProcess -subject $subject
+    Write-Output "Message trace returned $($message_list.count) messages with our subject"
+
+    # using the power of recursive function, we call out the function again for each recipient. 
+    foreach ($message_list_item in $message_list) {
+        # Avoid endless loop by not running the same trace with the same sender address twice
+        $recursive_address = $global:recursive_results.senderaddress
+        if ($recursive_address -contains $message_list_item.recipientaddress) {
+            # Write-Output "Avoided infinite loop"
+        } else {
+            $global:recursive_results += $message_list_item
+            message_trace -senderaddress $message_list_item.RecipientAddress -subject $subject -intervalSize $intervalSize
+        }
     }
 }
 
