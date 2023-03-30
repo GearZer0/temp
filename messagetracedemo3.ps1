@@ -79,40 +79,60 @@ if ($end -like "now") {
 # function for the message trace itself, takes two parameters - senderaddress and subject
 function message_trace {
     param (
-        $senderaddress, $subject, $intervalSize = '1'
+        $senderaddress, $subject
     )
-    
+
+    # Calculate the time interval and split it into 10 equal sub-intervals if necessary
+    $interval = (New-TimeSpan -Start $start -End $end).TotalMinutes
+    if ($interval -gt 0) {
+        $subInterval = $interval / 10
+    }
+
+    # paging setup included if there should be over 5000 results on the page
     $page = 1
     $message_list = @()
 
-    while ($start -lt (Get-Date)) {
-        $page = 1
-        do {
-            Write-Output "Getting page $page of messages in interval $($start.ToString('yyyy-MM-dd')) to $($end.ToString('yyyy-MM-dd'))..."
-            try {
-                $messagesThisPage = Get-MessageTrace -SenderAddress $senderaddress -StartDate $start -EndDate $end -PageSize $pageSize -Page $page
+    do {
+        Write-Output "Getting page $page of messages..."
+        try {
+            $messagesThisPage = Get-MessageTrace -SenderAddress $senderaddress -StartDate $start -EndDate $end -PageSize $pageSize -Page $page
+        }
+        catch {
+        $PSItem
+        }
+
+        # If there are 5000 messages on the page, process 10 sub-intervals separately
+        if ($messagesThisPage.count -eq $pageSize) {
+            for ($i = 0; $i -lt 10; $i++) {
+                $newStart = $start.AddMinutes($i * $subInterval)
+                $newEnd = $newStart.AddMinutes($subInterval)
+                $subMessages = message_trace -senderaddress $senderaddress -subject $subject -start $newStart -end $newEnd -pageSize $pageSize
+                $messagesThisPage += $subMessages
             }
-            catch {
-                $PSItem
-            }
-        
-            # filter our results by subject
-            $filtered_result = $messagesThisPage | Where-Object {$psitem.subject -like "*$subject*"}
+        }
 
-            # add to our final output array
-            $global:final_output += $filtered_result
-            $message_list += $filtered_result
+        # update the statistics variables
+        $global:all_returned_email += $messagesThisPage
+        $global:total_pages_searched++
 
-            # write output and increase the page count
-            Write-Output "There were $($messagesThisPage.count) messages on page $page..."
-            $page++
-        
-        } until ($messagesThisPage.count -lt $pageSize)
+        # filter our results by subject
+        $filtered_result = $messagesThisPage | Where-Object {$psitem.subject -like "*$subject*"}
 
-        # Move to the next interval
-        $end = $start
-        $start = $start.AddDays(-$intervalSize)
-    }
+        # more statistics for the log file, for each senderaddress
+        $users_stats = $messagesThisPage | Select-Object @{N = 'senderaddress';  E = {$senderaddress}}, @{N = 'page nr.';  E = {$page}}, 
+            @{N = 'messages on this page';  E = {$messagesThisPage.count}}, @{N = 'hit on subject';  E = {($PSItem | Where-Object {$psitem.subject -like "*$subject*"}).subject}},
+                @{N = 'date';  E = {$psitem | Select-Object -ExpandProperty received}}
+        $global:all_users_stats += $users_stats
+
+        # add to our final output array
+        $global:final_output += $filtered_result
+        $message_list += $filtered_result
+
+        # write output and increase the page count
+        Write-Output "There were $($messagesThisPage.count) messages on page $page..."
+        $page++
+
+    } until ($messagesThisPage.count -lt $pageSize)
 
     Write-Output "Message trace returned $($message_list.count) messages with our subject"
 
@@ -123,12 +143,11 @@ function message_trace {
         if ($recursive_address -contains $message_list_item.recipientaddress) {
             # Write-Output "Avoided infinite loop"
         } else {
-            $global:recursive_results += $message_list_item
-            message_trace -senderaddress $message_list_item.RecipientAddress -subject $subject -intervalSize $intervalSize
+        $global:recursive_results += $message_list
+        message_trace -senderaddress $message_list_item.RecipientAddress -subject $subject_for_loop -startdate $start -enddate $end
         }
     }
-}
-
+} 
 
 #variables for usage in the function for loop
 $subject_for_loop = ""
