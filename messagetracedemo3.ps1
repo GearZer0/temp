@@ -123,7 +123,6 @@ function message_trace {
                 Write-Output "Processing interval $($i + 1)"
             }
             $messagesThisPage = $messagesThisPageTemp
-            Write-Output "Temp value: $($messagesThisPageTemp.count) messages on page $page..."
         }
         
         # update the statistics variables
