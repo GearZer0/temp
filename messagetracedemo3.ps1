@@ -107,13 +107,14 @@ function message_trace {
 
         # If there are 5000 messages on the page, process 10 sub-intervals separately
         if ($messagesThisPage.count -eq $pageSize) {
+            Write-Output "Page with 5000 objects detected, processing sub-intervals"
             $messagesThisPageTemp
             for ($i = 0; $i -lt 10; $i++) {
                 $newStart = $startDateTime.AddMinutes($i * $subInterval)
                 $newEnd = $newStart.AddMinutes($subInterval)
                 $subMessages = Get-MessageTrace -SenderAddress $senderaddress -StartDate $newStart -EndDate $newEnd -pageSize $pageSize -Page $page
                 $messagesThisPageTemp += $subMessages
-                Write-Output "Temp value: $($messagesThisPageTemp.count) messages on page $page..."
+                Write-Output "Processing interval $($i + 1)"
             }
             $messagesThisPage = $messagesThisPageTemp
             Write-Output "Temp value: $($messagesThisPageTemp.count) messages on page $page..."
