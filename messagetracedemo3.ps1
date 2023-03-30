@@ -27,6 +27,8 @@ if($null -eq $intervals){
     $intervals = 10
 }
 
+Write-Output "intervals param: $intervals"
+
 # clear any possible previous errors
 $error.Clear()
 
