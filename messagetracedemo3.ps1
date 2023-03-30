@@ -107,14 +107,15 @@ function message_trace {
 
         # If there are 5000 messages on the page, process 10 sub-intervals separately
         if ($messagesThisPage.count -eq $pageSize) {
+            $messagesThisPageTemp
             for ($i = 0; $i -lt 10; $i++) {
                 $newStart = $startDateTime.AddMinutes($i * $subInterval)
                 $newEnd = $newStart.AddMinutes($subInterval)
-                $subMessages = message_trace -senderaddress $senderaddress -subject $subject -start $newStart -end $newEnd -pageSize $pageSize
-                $messagesThisPage += $subMessages
+                $subMessages = Get-MessageTrace -SenderAddress $senderaddress -subject $subject -StartDate $newStart -EndDate $newEnd -pageSize $pageSize -Page $page
+                $messagesThisPageTemp += $subMessages
             }
         }
-
+        $messagesThisPage = $messagesThisPageTemp
         # update the statistics variables
         $global:all_returned_email += $messagesThisPage
         $global:total_pages_searched++
