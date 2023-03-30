@@ -82,8 +82,12 @@ function message_trace {
         $senderaddress, $subject
     )
 
+    # Convert start and end to DateTime objects
+    $startDateTime = [DateTime]::Parse($start)
+    $endDateTime = [DateTime]::Parse($end)
+
     # Calculate the time interval and split it into 10 equal sub-intervals if necessary
-    $interval = (New-TimeSpan -Start $start -End $end).TotalMinutes
+    $interval = (New-TimeSpan -Start $startDateTime -End $endDateTime).TotalMinutes
     if ($interval -gt 0) {
         $subInterval = $interval / 10
     }
@@ -104,7 +108,7 @@ function message_trace {
         # If there are 5000 messages on the page, process 10 sub-intervals separately
         if ($messagesThisPage.count -eq $pageSize) {
             for ($i = 0; $i -lt 10; $i++) {
-                $newStart = $start.AddMinutes($i * $subInterval)
+                $newStart = $startDateTime.AddMinutes($i * $subInterval)
                 $newEnd = $newStart.AddMinutes($subInterval)
                 $subMessages = message_trace -senderaddress $senderaddress -subject $subject -start $newStart -end $newEnd -pageSize $pageSize
                 $messagesThisPage += $subMessages
@@ -143,11 +147,11 @@ function message_trace {
         if ($recursive_address -contains $message_list_item.recipientaddress) {
             # Write-Output "Avoided infinite loop"
         } else {
-        $global:recursive_results += $message_list
+        $global:recursive_results += $message_list_item
         message_trace -senderaddress $message_list_item.RecipientAddress -subject $subject_for_loop -startdate $start -enddate $end
         }
     }
-} 
+}  
 
 #variables for usage in the function for loop
 $subject_for_loop = ""
