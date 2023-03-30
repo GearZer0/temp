@@ -19,7 +19,13 @@ param(
     [string]$start,
     [Parameter(Mandatory=$true)]
     [string]$end
+    [Parameter(Mandatory=$false)]
+    [string]$intervals
 )
+
+if($null -eq $intervals){
+    $intervals = 10
+}
 
 # clear any possible previous errors
 $error.Clear()
@@ -89,7 +95,7 @@ function message_trace {
     # Calculate the time interval and split it into 10 equal sub-intervals if necessary
     $interval = (New-TimeSpan -Start $startDateTime -End $endDateTime).TotalMinutes
     if ($interval -gt 0) {
-        $subInterval = $interval / 10
+        $subInterval = $interval / $intervals
     }
 
     # paging setup included if there should be over 5000 results on the page
@@ -109,7 +115,7 @@ function message_trace {
         if ($messagesThisPage.count -eq $pageSize) {
             Write-Output "Page with 5000 objects detected, processing sub-intervals"
             $messagesThisPageTemp
-            for ($i = 0; $i -lt 10; $i++) {
+            for ($i = 0; $i -lt $intervals; $i++) {
                 $newStart = $startDateTime.AddMinutes($i * $subInterval)
                 $newEnd = $newStart.AddMinutes($subInterval)
                 $subMessages = Get-MessageTrace -SenderAddress $senderaddress -StartDate $newStart -EndDate $newEnd -pageSize $pageSize -Page $page
