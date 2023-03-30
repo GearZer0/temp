@@ -23,8 +23,10 @@ param(
     [string]$intervals
 )
 
-if($null -eq $intervals){
-    $intervals = 10
+if ($intervals){
+    $numIntervals = $intervals
+} else {
+    $numIntervals = 10
 }
 
 Write-Output "intervals param: $intervals"
