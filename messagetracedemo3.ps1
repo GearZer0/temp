@@ -120,9 +120,10 @@ function message_trace {
                 $newEnd = $newStart.AddMinutes($subInterval)
                 $subMessages = Get-MessageTrace -SenderAddress $senderaddress -StartDate $newStart -EndDate $newEnd -pageSize $pageSize -Page $page
                 $messagesThisPageTemp += $subMessages
-                Write-Output "Processing interval $($i + 1)"
+                Write-Output "$($messagesThisPageTemp.count) messages on page $page, interval $($i + 1)"
             }
             $messagesThisPage = $messagesThisPageTemp
+            
         }
         
         # update the statistics variables
