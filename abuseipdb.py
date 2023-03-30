@@ -13,9 +13,10 @@ def get_abuseipdb_info(ip):
         resolved_domain = data['domain']
         hostname = data['hostnames'][0] if data['hostnames'] else None
         country = data['countryCode']
-        return verdict, resolved_domain, hostname, country
+        isp = data['isp']
+        return verdict, resolved_domain, hostname, country, isp
     else:
-        return None, None, None, None
+        return None, None, None, None, None
 
 if __name__ == '__main__':
     input_file = 'input.csv'
@@ -23,9 +24,9 @@ if __name__ == '__main__':
     with open(input_file, 'r') as csv_file, open(output_file, 'w', newline='') as output_csv:
         reader = csv.reader(csv_file)
         writer = csv.writer(output_csv)
-        writer.writerow(['IP Address', 'Verdict', 'Resolved Domain', 'Hostname', 'Country'])
+        writer.writerow(['IP Address', 'Verdict', 'Resolved Domain', 'Hostname', 'Country', 'ISP'])
         for row in reader:
             ip = row[0]
-            verdict, resolved_domain, hostname, country = get_abuseipdb_info(ip)
-            writer.writerow([ip, verdict, resolved_domain, hostname, country])
-            print(f'IP: {ip}, Verdict: {verdict}, Resolved Domain: {resolved_domain}, Hostname: {hostname}, Country: {country}')
+            verdict, resolved_domain, hostname, country, isp = get_abuseipdb_info(ip)
+            writer.writerow([ip, verdict, resolved_domain, hostname, country, isp])
+            print(f'IP: {ip}, Verdict: {verdict}, Resolved Domain: {resolved_domain}, Hostname: {hostname}, Country: {country}, ISP: {isp}')
