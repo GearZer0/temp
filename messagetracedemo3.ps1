@@ -18,7 +18,7 @@ param(
     [Parameter(Mandatory=$true)]
     [string]$start,
     [Parameter(Mandatory=$true)]
-    [string]$end
+    [string]$end,
     [Parameter(Mandatory=$false)]
     [string]$intervals
 )
