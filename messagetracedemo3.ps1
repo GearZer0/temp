@@ -114,8 +114,9 @@ function message_trace {
                 $subMessages = Get-MessageTrace -SenderAddress $senderaddress -subject $subject -StartDate $newStart -EndDate $newEnd -pageSize $pageSize -Page $page
                 $messagesThisPageTemp += $subMessages
             }
+            $messagesThisPage = $messagesThisPageTemp
         }
-        $messagesThisPage = $messagesThisPageTemp
+        
         # update the statistics variables
         $global:all_returned_email += $messagesThisPage
         $global:total_pages_searched++
