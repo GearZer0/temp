@@ -111,7 +111,7 @@ function message_trace {
             for ($i = 0; $i -lt 10; $i++) {
                 $newStart = $startDateTime.AddMinutes($i * $subInterval)
                 $newEnd = $newStart.AddMinutes($subInterval)
-                $subMessages = Get-MessageTrace -SenderAddress $senderaddress -subject $subject -StartDate $newStart -EndDate $newEnd -pageSize $pageSize -Page $page
+                $subMessages = Get-MessageTrace -SenderAddress $senderaddress -StartDate $newStart -EndDate $newEnd -pageSize $pageSize -Page $page
                 $messagesThisPageTemp += $subMessages
             }
             $messagesThisPage = $messagesThisPageTemp
