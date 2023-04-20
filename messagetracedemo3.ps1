@@ -6,8 +6,9 @@
 5. Use a loop to iterate through all the recipients and perform a message trace on each recipient, together with an email subject that was identified in step 1
 6. Repeat steps 4 and 5 until there are no more results.
 7. Repeat steps 2 to 6 for all initial email addresses and subjects until there are no more results.
-8. The desired output will have all the email events and all its available fields to a csv file.
-9. Create a log that logs the number of page and its message searched, Total number of message searched, and total time taken.
+8. it will split into interval (10 as default) if a page reaches 5,000 maximum objects. because if the desired object is at 5,001 or above, it wont be captured due to the cap 5,000
+9. The desired output will have all the email events and all its available fields to a csv file.
+10. Create a log that logs the number of page and its message searched, Total number of message searched, and total time taken.
 Added no.9 the log file to follow https://cynicalsys.com/2019/09/13/working-with-large-exchange-messages-traces-in-powershell/
 #>
 
