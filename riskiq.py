@@ -16,15 +16,18 @@ def get_passive_dns(domain):
             return first_seen, last_seen
     return None, None
 
-# Read domains from CSV file
-csv_file = 'domains.csv'  # Replace with your CSV file path
-with open(csv_file, 'r') as file:
-    reader = csv.reader(file)
-    next(reader)  # Skip header row if present
+csv_file = 'output.csv'
+input_csv_file = 'domains.csv'
+
+with open(input_csv_file, 'r') as input_file, open(csv_file, 'w', newline='') as output_file:
+    reader = csv.reader(input_file)
+    writer = csv.writer(output_file)
+    header = next(reader)
+    header.extend(['First Seen', 'Last Seen'])
+    writer.writerow(header)
+
     for row in reader:
-        domain = row[0]  # Assuming the domain is in the first column of the CSV
+        domain = row[0]
         first_seen, last_seen = get_passive_dns(domain)
-        print(f"Domain: {domain}")
-        print(f"First Seen: {first_seen}")
-        print(f"Last Seen: {last_seen}")
-        print()
+        row.extend([first_seen, last_seen])
+        writer.writerow(row)
