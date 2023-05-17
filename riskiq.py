@@ -1,5 +1,7 @@
 import csv
+import base64
 import requests
+import time
 
 # Set up your RiskIQ API credentials
 api_key = 'YOUR_API_KEY'
@@ -11,11 +13,13 @@ api_url = 'https://api.riskiq.net/'
 def retrieve_first_last_seen(domain):
     endpoint = f'{api_url}v1/passiveTotal/search/query'
 
+    # Encode API key and secret
+    encoded_api_key = base64.b64encode(f'{api_key}:{api_secret}'.encode()).decode()
+
     headers = {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'Api-Key': api_key,
-        'Api-Secret': api_secret
+        'Authorization': f'Basic {encoded_api_key}'
     }
 
     # Build the payload
@@ -41,6 +45,14 @@ def retrieve_first_last_seen(domain):
         print(f"Error retrieving data for domain: {domain}")
         print(f"Status Code: {response.status_code}")
         print(f"Error Message: {response.text}")
+
+    # Handle rate limits
+    if response.headers.get('x-rq-stability-remaining') == '0':
+        reset_time = int(response.headers.get('x-rq-stability-reset'))
+        current_time = int(time.time())
+        sleep_duration = max(0, reset_time - current_time) + 1
+        print(f"Rate limit reached. Waiting for {sleep_duration} seconds...")
+        time.sleep(sleep_duration)
 
 # Read domains from a CSV file
 def read_domains_from_csv(filename):
