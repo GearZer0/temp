@@ -31,7 +31,20 @@ int main() {
         setsid();
 
         // Open the file in append mode and create it if it doesn't exist
-        int file = open("test.txt", O_CREAT | O_WRONLY | O_APPEND, 0644);
+        char file_path[] = "/tmp/test.txt";  // File path in /tmp/ directory
+        int file = open(file_path, O_CREAT | O_WRONLY | O_APPEND, 0644);
+        if (file == -1) {
+            perror("Error opening file");
+            exit(1);
+        }
+
+        // Write the string to the file
+        char message[] = "respect the order of volatility during artifacts collection!\n";
+        ssize_t bytes_written = write(file, message, strlen(message));
+        if (bytes_written == -1) {
+            perror("Error writing to file");
+            exit(1);
+        }
 
         // Create a Unix domain socket
         int sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -98,5 +111,4 @@ int main() {
         waitpid(pid, NULL, 0);
     }
 
-    return 0;
-}
+    return 0
