@@ -1,0 +1,56 @@
+##### Active Network ####
+
+# Open network ports or raw sockets
+netstat -plant
+
+# open ports with assoicated process
+lsof -i -n -P
+
+#Firewall Rules
+/usr/sbin/iptables -L
+
+#System ARP cache
+/usr/sbin/arp -a
+
+#List all services
+/usr/sbin/service --status-all
+
+#network interface
+ifconfig
+
+#DNS
+cat /etc/hosts
+cat /etc/resolv.conf
+
+##########################3
+
+##### Process #####
+
+#Running Processes
+ps -auxw --forest
+ps -u <username>
+
+#List open Files and sockets by a process
+lsof -R -p <PID>
+
+#processes associated with a username
+ps -u <username>
+
+#Information of a process
+/proc/<PID>/ ls -lah
+
+#copy of executable file
+/proc/<PID>/exe
+
+#File Handle / what the process has opened
+ls -la /proc/<PID>/fd
+
+#Process environment:
+strings /proc/<PID>/environ
+
+#Process command name/cmdline:
+strings /proc/<PID>/comm
+strings /proc/<PID>/cmdline
+
+#Deleted binaries still running:
+ls -laR /proc/*/exe 2> /dev/null | grep -i deleted
