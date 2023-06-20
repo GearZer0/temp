@@ -36,26 +36,26 @@ ps -auxw --forest
 #ps -u <username>
 
 #List open Files and sockets by a process
-/usr/sbin/lsof -R $pid
+/usr/sbin/lsof -R <PID>
 
 #processes associated with a username
 #ps -u <username>
 
 #Information of a process
-ls -lah /proc/$pid/
+ls -lah /proc/<PID>/
 
 #copy of executable file
-#xxd -p /proc/$pid/exe
+#xxd -p /proc/<PID>/exe
 
 #File Handle / what the process has opened
-ls -la /proc/$pid/fd
+ls -la /proc/<PID>/fd
 
 #Process environment:
-strings /proc/$pid/environ
+strings /proc/<PID>/environ
 
 #Process command name/cmdline:
-strings /proc/$pid/comm
-strings /proc/$pid/cmdline
+strings /proc/<PID>/comm
+strings /proc/<PID>/cmdline
 
 #Deleted binaries still running:
 #ls -laR /proc/*/exe 2> /dev/null | grep -i deleted
@@ -99,7 +99,7 @@ log_file="${output_dir}/script_log.txt"
 commands_filename="commands"
 
 # The default timeout foreach command before terminating it
-timeout=30
+timeout=5
 
 # Arguments assigment
 pid=$1
@@ -115,8 +115,8 @@ while IFS="" read -r line || [ -n "$line" ]
 do
   # If the line isn't empty
   if [[ ! -z $line ]] && [[ $line != \#* ]]; then
-          # Replace the $pid into the actual PID passed to script
-          command=$(echo $line | sed 's/$pid/'"$pid"'/g' | sed 's/<username>/'"$usrname"'/g')
+          # Replace the <PID> into the actual PID passed to script
+          command=$(echo $line | sed 's/<PID>/'"$pid"'/g' | sed 's/<username>/'"$usrname"'/g')
 
           # Clear the command out of all the spaces and special characters
           clean_name=$(echo $command | sed "s/[^[:alpha:]+]/_/g" | tr '[:upper:]' '[:lower:]')
