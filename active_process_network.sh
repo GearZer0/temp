@@ -41,7 +41,7 @@ ps -auxw --forest
 #ps -u <username>
 
 #List open Files and sockets by a process
-/usr/sbin/lsof -R <PID>
+/usr/sbin/lsof -R -p <PID>
 
 #processes associated with a username
 #ps -u <username>
