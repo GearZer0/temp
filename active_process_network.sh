@@ -1,3 +1,71 @@
+#!/bin/bash
+cat <<EOT > commands
+##### START WRITING YOUR COMMANDS HERE #####
+
+
+##### Active Network ####
+
+# Open network ports or raw sockets
+netstat -plant
+
+# open ports with assoicated process
+lsof -i -n -P
+
+#Firewall Rules
+/usr/sbin/iptables -L
+
+#System ARP cache
+/usr/sbin/arp -a
+
+#List all services
+/usr/sbin/service --status-all
+
+#network interface
+ifconfig
+
+#DNS
+cat /etc/hosts
+cat /etc/resolv.conf
+
+##########################3
+
+##### Process #####
+
+#Running Processes
+ps -auxw --forest
+#ps -u <username>
+
+#List open Files and sockets by a process
+/usr/sbin/lsof -R $pid
+
+#processes associated with a username
+#ps -u <username>
+
+#Information of a process
+ls -lah /proc/$pid/
+
+#copy of executable file
+#xxd -p /proc/$pid/exe
+
+#File Handle / what the process has opened
+ls -la /proc/$pid/fd
+
+#Process environment:
+strings /proc/$pid/environ
+
+#Process command name/cmdline:
+strings /proc/$pid/comm
+strings /proc/$pid/cmdline
+
+#Deleted binaries still running:
+#ls -laR /proc/*/exe 2> /dev/null | grep -i deleted
+
+
+
+##### DON'T WRITE ANYTHING AFTER THIS #####
+EOT
+
+
 # Function to both print to screen and also log to file
 function echo_and_log() {
         echo $1
@@ -17,8 +85,12 @@ function hostname_date_pattern {
 
 hostname=$(hostname)
 
+# The folder where the script output will be
+output_dir_location="/RTR/Collections/rtr_linux_process_network"
+
 # The name of the folder to output the log files to
-output_dir=$(hostname_date_pattern output_folder)
+#output_dir="${output_dir_location}/$(hostname_date_pattern output_folder)"
+output_dir="${output_dir_location}"
 
 # The name of the log file where all this automation transcript is recorded
 log_file="${output_dir}/script_log.txt"
@@ -26,12 +98,8 @@ log_file="${output_dir}/script_log.txt"
 # The file name of where all the commands are located
 commands_filename="commands"
 
-
-# The RTR output dir
-rtr_directory="RTR/Collections/rtr_linux_Process_Network"
-
 # The default timeout foreach command before terminating it
-timeout=5
+timeout=30
 
 # Arguments assigment
 pid=$1
@@ -47,11 +115,11 @@ while IFS="" read -r line || [ -n "$line" ]
 do
   # If the line isn't empty
   if [[ ! -z $line ]] && [[ $line != \#* ]]; then
-          # Replace the <PID> into the actual PID passed to script
-          command=$(echo $line | sed 's/<PID>/'"$pid"'/g' | sed 's/<username>/'"$usrname"'/g')
+          # Replace the $pid into the actual PID passed to script
+          command=$(echo $line | sed 's/$pid/'"$pid"'/g' | sed 's/<username>/'"$usrname"'/g')
 
           # Clear the command out of all the spaces and special characters
-          clean_name=$(echo $command | tr -dc '[:alnum:]\n\r' | tr '[:upper:]' '[:lower:]')
+          clean_name=$(echo $command | sed "s/[^[:alpha:]+]/_/g" | tr '[:upper:]' '[:lower:]')
 
           # Get current datetime and generate filename
           file_name=$(hostname_date_pattern ${clean_name})".txt"
@@ -78,4 +146,4 @@ done < $commands_filename
 echo_and_log "Script ended - $(utc_date) (UTC) - Beggining ZIP"
 
 # ZIP the file
-tar -cf $(hostname_date_pattern files_${datetime}).tar --remove-files $output_dir
+# tar -cf "${output_dir_location}/$(hostname_date_pattern files).tar" --remove-files $output_dir
