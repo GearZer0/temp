@@ -9,19 +9,24 @@ cat <<EOT > commands
 netstat -plant
 
 # open ports with assoicated process
-lsof -i -n -P
+/usr/sbin/lsof -i -n -P
+/usr/bin/lsof -i -n -P
 
 #Firewall Rules
 /usr/sbin/iptables -L
+/usr/bin/iptables -L
 
 #System ARP cache
 /usr/sbin/arp -a
+/usr/bin/arp -a
 
 #List all services
 /usr/sbin/service --status-all
+/usr/bin/service --status-all
 
 #network interface
-ifconfig
+/usr/sbin/ifconfig
+/usr/bin/ifconfig
 
 #DNS
 cat /etc/hosts
@@ -99,7 +104,7 @@ log_file="${output_dir}/script_log.txt"
 commands_filename="commands"
 
 # The default timeout foreach command before terminating it
-timeout=5
+timeout=20
 
 # Arguments assigment
 pid=$1
