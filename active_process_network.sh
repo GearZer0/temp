@@ -14,11 +14,11 @@ netstat -ano #some linux flavor doesnt have p,t,u
 /usr/bin/lsof -i -n -P
 
 #Firewall Rules
-/usr/sbin/iptables -L
+/usr/sbin/iptables -L 
 /usr/bin/iptables -L
 
 #System ARP cache
-/usr/sbin/arp -a
+/usr/sbin/arp -a 
 /usr/bin/arp -a
 
 #List all services
@@ -43,6 +43,7 @@ ps -auxw --forest
 
 #List open Files and sockets by a process
 /usr/sbin/lsof -R -p <PID>
+/usr/bin/lsof -R -p <PID>
 
 #processes associated with a username
 #ps -u <username>
