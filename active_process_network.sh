@@ -7,6 +7,7 @@ cat <<EOT > commands
 
 # Open network ports or raw sockets
 netstat -plant
+netstat -ano
 
 # open ports with assoicated process
 /usr/sbin/lsof -i -n -P
