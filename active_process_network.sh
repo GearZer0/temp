@@ -5,9 +5,9 @@ cat <<EOT > commands
 
 ##### Active Network ####
 
-# Open network ports or raw sockets
-netstat -plant
-netstat -ano
+# Open network ports or raw sockets or listening connection
+netstat -plantuo
+netstat -ano #some linux flavor doesnt have p,t,u
 
 # open ports with assoicated process
 /usr/sbin/lsof -i -n -P
@@ -51,7 +51,7 @@ ps -auxw --forest
 ls -lah /proc/<PID>/
 
 #copy of executable file
-#xxd -p /proc/<PID>/exe
+#xxd -p /proc/<PID>/exe > file.hex
 
 #File Handle / what the process has opened
 ls -la /proc/<PID>/fd
